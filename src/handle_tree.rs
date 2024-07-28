@@ -1,6 +1,6 @@
 use tera::Tera;
 
-fn get_tree() -> Tera {
+pub fn get_tree() -> Tera {
 
     let tera = match Tera::new("templates/**/*.html") {
         Ok(t) => t,

@@ -1,0 +1,8 @@
+[project]
+	path = "haych_project/"
+
+[templates]
+	paths = ["templates/"]
+
+[static]
+	path = "static/"

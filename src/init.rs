@@ -20,25 +20,25 @@ pub struct InitArgs {
 pub fn init_project(args: InitArgs) {
 
 	let create_project_dir_res = fs::create_dir(&args.project_directory);
-
 	let create_templates_dir_res = fs::create_dir(
 		format!("{}/{}", 
 			&args.project_directory, args.template_directory)
 		);
 	env::set_current_dir(&args.project_directory);
-
 	let create_static_dir_res = fs::create_dir( 
 			args.static_directory
 		);
-
-
 	fs::File::create(
 		"templates/header.html"
 		);
 
-
 	let index_write_res = fs::write(
 		"index.html",
 		include_str!("default_index.html")
+		);
+
+	let config_write_res = fs::write(
+		".haych.toml",
+		include_str!("default_config.toml")
 		);
 }
