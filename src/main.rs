@@ -1,3 +1,4 @@
+pub mod config;
 mod build_cmd;
 mod init;
 mod install;

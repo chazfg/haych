@@ -33,8 +33,8 @@ pub fn init_project(args: InitArgs) {
 		);
 
 	let index_write_res = fs::write(
-		"index.html",
-		include_str!("default_index.html")
+		"templates/layout.html",
+		include_str!("default_layout.html")
 		);
 
 	let config_write_res = fs::write(

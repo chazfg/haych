@@ -1,20 +1,13 @@
-use futures::{
-    channel::mpsc::{channel, Receiver},
-    SinkExt, StreamExt,
-};
-use std::path::Path;
+use std::{fs, thread, time::Duration};
+use std::sync::{Mutex, Arc, MutexGuard};
+use std::{process, path::Path};
+use crate::config::ProjectConfig;
+use crate::build_cmd;
+use crate::handle_tree;
 use clap::{Parser, Subcommand, FromArgMatches, Command, Args, ArgMatches};
-use notify::{Watcher, RecommendedWatcher, RecursiveMode, Result, Event, Config};
+use notify::{RecursiveMode, Watcher, Event, event::EventKind};
+use notify_debouncer_full::new_debouncer;
 
-pub fn watch_files(args: WatchArgs) {
-
-    futures::executor::block_on(async {
-        if let Err(e) = async_watch(".").await {
-            println!("error: {:?}", e)
-        }
-    });
-
-}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -24,44 +17,56 @@ pub struct WatchArgs {
 
 }
 
-
 pub fn watch_command() -> Command {
     Command::new("watch")
         .long_about("watches for changes")
-
 }
 
 
-fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)> {
-    let (mut tx, rx) = channel(1);
+/// Advanced example of the notify-debouncer-full, accessing the internal file ID cache
+pub fn watch_files(args: WatchArgs) {
+    // setup debouncer
+    std::fs::create_dir("debug");
+    let file_tree = handle_tree::get_tree();
+    let file_tree_lock = Arc::new(Mutex::new(file_tree));
 
-    // Automatically select the best implementation for your platform.
-    // You can also access each implementation directly e.g. INotifyWatcher.
-    let watcher = RecommendedWatcher::new(
-        move |res| {
-            futures::executor::block_on(async {
-                tx.send(res).await.unwrap();
-            })
-        },
-        Config::default(),
-    )?;
 
-    Ok((watcher, rx))
-}
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut debouncer = new_debouncer(Duration::from_millis(200), None, tx).unwrap();
+    debouncer.watcher().watch(Path::new("."), RecursiveMode::Recursive).unwrap();
 
-async fn async_watch<P: AsRef<Path>>(path: P) -> notify::Result<()> {
-    let (mut watcher, mut rx) = async_watcher()?;
-
-    // Add a path to be watched. All files and directories at that path and
-    // below will be monitored for changes.
-    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
-
-    while let Some(res) = rx.next().await {
-        match res {
-            Ok(event) => println!("changed: {:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
+    // print all events and errors
+    for result in rx {
+        match result {
+            Ok(events) => events.iter().for_each(|event| handle_event(&event.event, Arc::clone(&file_tree_lock))),
+            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
         }
     }
 
-    Ok(())
 }
+
+fn handle_event(event: &Event, ft_lock: Arc<Mutex<tera::Tera>>) {
+    match event {
+        Event {kind: EventKind::Modify(_), ..} => {
+            let ft_lock_clone = Arc::clone(&ft_lock);
+            thread::spawn(move|| {
+                match ft_lock_clone.try_lock() {
+                    Ok(mut lock) => {
+                        lock.full_reload();
+                        let bh = lock.render("layout.html", &tera::Context::new()).unwrap();
+                        std::fs::write("debug/index.html", bh);                        
+                },
+                Err(_) => (println!("no lock"))
+                }
+            });
+        },
+        _ => ()
+    }
+}
+
+#[derive(Debug)]
+enum ChangeBuffer {
+    Null,
+    Rebuild
+}
+

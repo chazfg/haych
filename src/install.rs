@@ -14,11 +14,6 @@ pub struct InstallArgs {
 pub fn install_package(args: InstallArgs) {
 
 	// let current_directory = env::current_dir().unwrap();
-	if let Ok(dir_config) = fs::read_to_string(".haych.toml") {
-		let config = dir_config.parse::<Table>().unwrap();
-	} else {
-		let config =  include_str!("default_config.toml").parse::<Table>().unwrap();
-	}
 	let packages =  include_str!("default_paths.toml").parse::<Table>().unwrap();
 
 	if let Some(p) = packages.get(&args.package) {

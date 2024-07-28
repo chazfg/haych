@@ -17,9 +17,8 @@ pub struct BuildArgs {
 
 pub fn build_application(args: BuildArgs) {
 	let mut app_tree = crate::handle_tree::get_tree();
-	app_tree.add_template_file("index.html", None);
 	let mut context = Context::new();
-	let built_html = app_tree.render("index.html", &context).unwrap();
+	let built_html = app_tree.render("layout.html", &context).unwrap();
 
 	let create_dist_dir = fs::create_dir("dist/");
 	fs::write("dist/index.html", built_html);
