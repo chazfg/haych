@@ -1,0 +1,2 @@
+[htmx]
+	link = "https://unpkg.com/htmx.org@2.0.1/dist/htmx.min.js"
