@@ -53,11 +53,8 @@ CLI to watch for changes and build web static files using templates to separate 
 `haych init`
 Initialize project 
 
-`haych build`
-Build html
-
 `haych watch`
-Watch for changes
+Watch for changes, will watch src, cargo run, and serve the server. Will also watch the templates/ and build the index.html to serve
 
 ## 🚀 Deployment <a name = "deployment"></a>
 
