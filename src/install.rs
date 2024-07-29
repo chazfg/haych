@@ -25,7 +25,7 @@ pub fn install_package(args: InstallArgs) {
 		fs::write(
 			format!("static/{}", args.package),
 			package_text
-			);
+			).expect("should write");
 		
 	} else {
 		println!("could not find");

@@ -1,18 +1,26 @@
 use toml::Table;
-use std::{fs, env};
+use std::{fs, env, path::PathBuf};
 
+#[derive(Debug)]
 pub struct ProjectConfig(Table);
 
 impl ProjectConfig {
+	pub fn init(cli_config: &Option<&PathBuf>) -> Result<Self, ()> {
 
-	pub fn init() -> Self {
+		// should add a check here to see if we're even in a haych project 
 
-		if let Ok(dir_config) = fs::read_to_string(".haych.toml") {
-			Self(dir_config.parse::<Table>().unwrap())
+		if let Some(config_path) = cli_config {
+			if let Ok(dir_config) = fs::read_to_string(config_path) {
+				Ok(Self(dir_config.parse::<Table>().unwrap()))
+			} else {
+				Err(())
+			}
 		} else {
-			Self(include_str!("default_config.toml").parse::<Table>().unwrap())
+			if let Ok(dir_config) = fs::read_to_string(".haych.toml") {
+				Ok(Self(dir_config.parse::<Table>().unwrap()))
+			} else {
+				Err(())
+			}
 		}
-
 	}
-
 }
